@@ -8,6 +8,7 @@ from datetime import datetime
 import edge_tts
 import pypdf
 import docx
+from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -350,6 +351,21 @@ async def handle_document_message(update: Update, context: ContextTypes.DEFAULT_
         logger.error(f"Document error: {e}")
         await status_msg.edit_text(f"❌ Error reading `{filename}`: {str(e)}")
 
+# --- Health Check Web Server for Cloud (Render/HF) ---
+async def health_check_handler(request):
+    return web.Response(text="Bot is healthy and running 24/7!")
+
+async def start_health_server():
+    port = int(os.getenv("PORT", 8080))
+    server = web.Application()
+    server.router.add_get("/", health_check_handler)
+    server.router.add_get("/health", health_check_handler)
+    runner = web.AppRunner(server)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    print(f">> Health check server listening on port {port}")
+
 def main():
     print(">> Initializing Telegram Commute Audio Bot...")
     app = (
@@ -370,6 +386,11 @@ def main():
     app.add_handler(CallbackQueryHandler(button_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document_message))
+
+    async def post_init(application):
+        await start_health_server()
+
+    app.post_init = post_init
 
     print(">> Telegram Bot is live and listening for messages!")
     app.run_polling(drop_pending_updates=True)
