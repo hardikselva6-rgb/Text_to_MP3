@@ -20,7 +20,7 @@ from telegram.ext import (
 )
 
 # Configuration
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8940844890:AAHndP19m54Sa_JwHPcdbijEkuYG6sGrgGc")
+BOT_TOKEN = os.environ["BOT_TOKEN"]
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TEMP_DIR = os.path.join(BASE_DIR, "telegram_audio")
 SETTINGS_FILE = os.path.join(BASE_DIR, "user_settings.json")
